@@ -1,0 +1,9 @@
+.DS_Store
+.idea/
+
+# Go stuff
+plummy-cli/vendor/
+
+# Java/Kotlin stuff
+plummy-daemon/.gradle
+plummy-daemon/build
