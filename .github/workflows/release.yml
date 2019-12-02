@@ -22,6 +22,6 @@ jobs:
         with:
           version: v0.123.3
           args: release
-          subdir: plummy-cli/
+          workdir: plummy-cli/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
