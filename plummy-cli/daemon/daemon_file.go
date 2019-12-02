@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rakutentech/plummy/plummy-cli/client"
+	"github.com/rakutentech/plummy/plummy-cli/config"
+	"github.com/rakutentech/plummy/plummy-cli/installer"
 	"io/ioutil"
 	"os"
 	"path"
 )
 
 type daemonSpec struct {
-	Pid     int    `json:"pid"`
-	BaseURL string `json:"base_url"`
+	Pid     int                 `json:"pid"`
+	BaseURL string              `json:"base_url"`
+	Jar     *installer.Resource `json:"resource"`
 }
 
 func (spec *daemonSpec) ToDaemon() Daemon {
@@ -19,8 +22,9 @@ func (spec *daemonSpec) ToDaemon() Daemon {
 		return nil
 	}
 	return &localDaemon{
-		pid: spec.Pid,
+		pid:    spec.Pid,
 		client: client.NewHttpClient(spec.BaseURL),
+		version: spec.Jar.Version(),
 	}
 }
 
@@ -61,17 +65,12 @@ func writeDaemonFile(spec *daemonSpec) error {
 }
 
 func daemonFilename() (string, error) {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return "", fmt.Errorf("cannot get user cache dir: %w", err)
-	}
-	daemonDir := path.Join(cacheDir, "plummy")
-
 	// Ensure directory exists
-	if err := os.MkdirAll(daemonDir, 0755); err != nil {
+	cacheDir := config.CacheDir()
+	if err := config.EnsureDir(cacheDir); err != nil {
 		return "", fmt.Errorf("cannot create cache directory: %w", err)
 	}
-	return path.Join(daemonDir, "daemon.json"), nil
+	return path.Join(cacheDir, "daemon.json"), nil
 }
 
 func pathExists(filename string) bool {

@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"github.com/Masterminds/semver/v3"
 	"github.com/rakutentech/plummy/plummy-cli/client"
 	"os"
 	"runtime"
@@ -13,11 +14,13 @@ type Daemon interface {
 	Client() client.Client
 	IsAlive() bool
 	Stop() error
+	Version() *semver.Version
 }
 
 type localDaemon struct {
-	pid int
-	client client.Client
+	pid     int
+	client  client.Client
+	version *semver.Version
 }
 
 func (d *localDaemon) Client() client.Client {
@@ -49,6 +52,10 @@ func (d *localDaemon) Stop() error {
 
 	// Wait for process to shut down gracefully
 	return waitAndKill(p, 10 * time.Second)
+}
+
+func (d *localDaemon) Version() *semver.Version {
+	return d.version
 }
 
 func waitAndKill(p *os.Process, timeout time.Duration) error {

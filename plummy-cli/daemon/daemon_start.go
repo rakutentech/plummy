@@ -2,10 +2,9 @@ package daemon
 
 import (
 	"context"
+	"github.com/rakutentech/plummy/plummy-cli/installer"
 	"github.com/rakutentech/plummy/plummy-cli/jvm"
 	"log"
-	"os"
-	"path"
 	"time"
 )
 
@@ -21,12 +20,20 @@ func Find() Daemon {
 	return spec.ToDaemon()
 }
 
-// Ensure returns an active daemon or starts a new one if
+// Ensure returns an active daemon or starts a new one if necessary
 func Ensure() Daemon {
-	d := Find()
+	jar, err := installer.EnsurePlummyDaemon()
+	if err != nil {
+		log.Fatalf("Daemon Installation failed: %v\n", err)
+	}
 
+	d := Find()
 	if d == nil || !d.IsAlive() {
-		d = start()
+		d = start(jar)
+	} else if shouldRestart(d, jar) {
+		// Restart the daemon if user asked for a different version a different version
+		log.Printf("Current daemon version is %s - restarting daemon with version %s\n", d.Version(), jar.Version())
+		d = restart(d, jar)
 	}
 
 	waitForDaemon(d)
@@ -37,13 +44,13 @@ func Ensure() Daemon {
 func Stop() {
 	daemon := Find()
 	if daemon != nil && daemon.IsAlive() {
-		log.Printf("Stopping daemon")
+		log.Printf("Stopping daemon\n")
 		err := daemon.Stop()
 		if err != nil {
-			log.Printf("[ERROR] Cannot stop daemon: %s", err.Error())
+			log.Printf("[ERROR] Cannot stop daemon: %s\n", err.Error())
 		}
 	} else {
-		log.Printf("Daemon not found")
+		log.Println("Daemon not found")
 	}
 }
 
@@ -54,31 +61,39 @@ func waitForDaemon(d Daemon) {
 	}
 }
 
-func start() Daemon {
-	// TODO: Properly install file
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatalf("Home directory not found: %v\n", err)
-	}
-	daemonJar := path.Join(homeDir, "plummy-0.1.0.jar")
-	if !pathExists(daemonJar) {
-		log.Fatalf("Daemon file %s not found\n", daemonJar)
-	}
+func start(daemonJar *installer.Resource) Daemon {
 	java := jvm.Default()
 	if java == nil {
 		log.Fatal("No JVM installation detected - please set JAVA_HOME\n")
 	}
-	proc, err := java.Daemonize(jvm.DaemonOptions{}, "-jar", daemonJar) // TODO: Allow to Port
+	proc, err := java.Daemonize(jvm.DaemonOptions{}, "-jar", daemonJar.Path()) // TODO: Allow to specify Port
 	if err != nil {
 		log.Fatalf("Could not start daemon: %v\n", err)
 	}
 	spec := &daemonSpec{
 		Pid:     proc.Pid,
 		BaseURL: "http://localhost:4545/",
+		Jar:     daemonJar,
 	}
 	if err := writeDaemonFile(spec); err != nil {
 		log.Printf("[WARN] Can't write daemon spec file: %v\n", err)
 	}
 
 	return spec.ToDaemon()
+}
+
+func restart(oldDaemon Daemon, newDaemonJar *installer.Resource) Daemon {
+	err := oldDaemon.Stop()
+	if err != nil {
+		log.Printf("[WARN] Can't stop old daemon: %v\n", err)
+	}
+	return start(newDaemonJar)
+}
+
+func shouldRestart(oldDaemon Daemon, newDaemonJar *installer.Resource) bool {
+	v := oldDaemon.Version()
+	if v == nil {
+		return true
+	}
+	return !v.Equal(newDaemonJar.Version())
 }
