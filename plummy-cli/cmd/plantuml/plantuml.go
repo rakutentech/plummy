@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("[Input Errror] %v", err)
 	}
 
-	d := daemon.Ensure()
+	d := daemon.Ensure(&daemon.StartupArgs{})
 	resp, err := d.Client().Render(context.Background(), "plantuml", &client.RenderRequest{
 		RawParams: params,
 		Files: inputs,

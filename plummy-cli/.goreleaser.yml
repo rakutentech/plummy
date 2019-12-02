@@ -15,6 +15,11 @@ builds:
       - linux
     goarch:
       - amd64
+    ldflags:
+      - -s -w
+      - -X github.com/rakutentech/plummy/plummy-cli/cli.Version={{.Version}}
+      - -X github.com/rakutentech/plummy/plummy-cli/cli.CommitHash={{.Commit}}
+      - -X github.com/rakutentech/plummy/plummy-cli/cli.BuildDate={{.Date}}
   - id: plantuml
     binary: plantuml
     main: ./cmd/plantuml
@@ -24,7 +29,11 @@ builds:
       - linux
     goarch:
       - amd64
-
+    ldflags:
+      - -s -w
+      - -X github.com/rakutentech/plummy/plummy-cli/cli.Version={{.Version}}
+      - -X github.com/rakutentech/plummy/plummy-cli/cli.CommitHash={{.Commit}}
+      - -X github.com/rakutentech/plummy/plummy-cli/cli.BuildDate={{.Date}}
 changelog:
   filters:
     exclude:

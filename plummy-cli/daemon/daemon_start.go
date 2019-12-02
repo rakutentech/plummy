@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"github.com/rakutentech/plummy/plummy-cli/cli"
 	"github.com/rakutentech/plummy/plummy-cli/installer"
 	"github.com/rakutentech/plummy/plummy-cli/jvm"
 	"log"
@@ -21,12 +22,23 @@ func Find() Daemon {
 }
 
 // Ensure returns an active daemon or starts a new one if necessary
-func Ensure() Daemon {
-	jar, err := installer.EnsurePlummyDaemon()
-	if err != nil {
-		log.Fatalf("Daemon Installation failed: %v\n", err)
+func Ensure(args *StartupArgs) Daemon {
+	var jar *installer.Resource
+	var err error
+	if args.JarFile != "" {
+		jar, err = installer.UsePlummyDaemon(args.JarFile)
+		if err != nil {
+			log.Fatalf("Daemon not found: %v\n", err)
+		}
+	} else {
+		if args.Version == "" {
+			args.Version = cli.Version
+		}
+		jar, err = installer.EnsurePlummyDaemon(args.Version)
+		if err != nil {
+			log.Fatalf("Daemon Installation failed: %v\n", err)
+		}
 	}
-
 	d := Find()
 	if d == nil || !d.IsAlive() {
 		d = start(jar)

@@ -1,62 +1,73 @@
 package installer
 
 import (
+	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/rakutentech/plummy/plummy-cli/config"
 	"log"
+	"os"
 	"path"
-	"path/filepath"
 )
 
-func PlummyDaemon() *Resource {
-	version, filename := findPlummyDaemon()
-	if version == nil || filename == "" {
+func FindPlummyDaemon(version *semver.Version) *Resource {
+	jarFile := path.Join(jarDir(), "plummy-daemon-" + version.String() + ".jar")
+	if _, err := os.Stat(jarFile); err != nil {
 		return nil
 	}
 	return &Resource{
-		path:    filename,
+		path: jarFile,
 		version: version,
 	}
 }
 
-func EnsurePlummyDaemon() (*Resource, error) {
-	if daemon := PlummyDaemon(); daemon != nil {
-		return daemon, nil
+func UsePlummyDaemon(jarFile string) (*Resource, error) {
+	if fi, err := os.Stat(jarFile); err != nil || fi.IsDir() {
+		return nil, fmt.Errorf("daemon file not found at %s", jarFile)
 	}
-	return InstallPlummyDaemon()
+	version, err := plummySemVer(jarFile)
+	if err != nil {
+		return nil, err
+	}
+	return &Resource{
+		path:    jarFile,
+		version: version,
+	}, nil
 }
 
-func InstallPlummyDaemon() (*Resource, error) {
-	url := "https://github.com/rakutentech/plummy/releases/download/v0.1.0/plummy-daemon-0.1.0.jar"
+func EnsurePlummyDaemon(versionStr string) (*Resource, error) {
+	version, err := parseOptionalVersion(versionStr)
+	if err != nil {
+		return nil, fmt.Errorf("bad pluumy version '%s' format: %w", versionStr, err)
+	}
+	if d := FindPlummyDaemon(version); d != nil {
+		return d, nil
+	}
+	return InstallPlummyDaemon(version)
+}
+
+func InstallPlummyDaemon(version *semver.Version) (*Resource, error) {
+	url := fmt.Sprintf(
+		"https://github.com/rakutentech/plummy/releases/download/v%v/plummy-daemon-%v.jar",
+		version, version)
 	log.Printf("Downloading plummy daemon from %s...\n", url)
 	return installFromURL(url, jarDir(), plummySemVer)
 }
 
-func findPlummyDaemon() (*semver.Version, string) {
-	jarPattern := path.Join(jarDir(), "plummy-daemon-*.jar")
-	matches, err := filepath.Glob(jarPattern)
-	if err != nil {
-		return nil, ""
-	}
-	var latestVersion *semver.Version
-	var latestVersionFile string
-	for _, filename := range matches {
-		version, err := plummySemVer(filename)
-		if err != nil {
-			continue
-		}
-		if latestVersion == nil || version.GreaterThan(latestVersion) {
-			latestVersion = version
-			latestVersionFile = filename
-		}
-	}
-	return latestVersion, latestVersionFile
-}
-
 func plummySemVer(filename string) (*semver.Version, error) {
-	return semVerFromFileName(filename, "plummy-daemon-", ".jar")
+	ver, err := semVerFromFileName(filename, "plummy-daemon-", ".jar")
+	if err != nil {
+		return nil, fmt.Errorf("bad plummy daemon filename: %w", err)
+	}
+	return ver, nil
 }
 
 func jarDir() string {
 	return path.Join(config.CacheDir(), "jar")
+}
+
+func parseOptionalVersion(versionStr string) (*semver.Version, error) {
+	if versionStr == "" {
+		return nil, nil // No version specified
+	}
+	return semver.StrictNewVersion(versionStr)
 }
