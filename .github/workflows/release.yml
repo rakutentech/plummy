@@ -14,11 +14,14 @@ jobs:
       -
         name: Set up Go
         uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.x
       -
         name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+        uses: boazy/goreleaser-action@master
         with:
           version: v0.123.3
           args: release
+          subdir: plummy-cli/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
