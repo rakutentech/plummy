@@ -2,23 +2,35 @@
 # Build customization
 project_name: plummy
 
+env:
+  - CGO_ENABLED=0
+
 builds:
-  - binary: plantuml
-    main: ./cmd/plantuml
-    env:
-      - CGO_ENABLED=0
+  - id: ditaa
+    binary: ditaa
+    main: ./cmd/ditaa
     goos:
       - windows
       - darwin
       - linux
     goarch:
       - amd64
-    ldflags: '-s -w -X main.version={{.Version}} -X main.buildDate={{.Date}}'
+  - id: plantuml
+    binary: plantuml
+    main: ./cmd/plantuml
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+
 changelog:
   filters:
     exclude:
       - Merge pull request
       - Merge branch
+      -
 checksum:
   name_template: '{{ .ProjectName }}-{{ .Version }}.sha256'
 

@@ -1,8 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"github.com/alecthomas/kingpin"
 	"os"
+)
+
+var (
+
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 type options struct {
@@ -19,6 +27,7 @@ type options struct {
 
 func parseOptions() *options {
 	app := kingpin.New("plantuml", "Plummy PlantUML Daemon Stub")
+	app.Version(fmt.Sprintf("Version %s | Commit: %s | Build Date: %s", version, commit, date))
 	// Support -h for help
 	app.HelpFlag.Short('h')
 	stop := app.Flag("stop", "Stop the daemon").Short('s').Bool()
