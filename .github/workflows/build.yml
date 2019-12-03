@@ -1,11 +1,14 @@
-name: goreleaser
+name: build
+
+# This script also does releases for GoReleaser which auto detects the presence
+# of tags.
 
 on:
   pull_request:
   push:
 
 jobs:
-  goreleaser:
+  build-cli:
     runs-on: ubuntu-latest
     steps:
       -
@@ -25,3 +28,15 @@ jobs:
           workdir: plummy-cli/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build-daemon:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v1
+      -
+        name: Build daemon
+        env:
+          GITHUB_USERNAME: boazy
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cd plummy-daemon && ./gradlew build
