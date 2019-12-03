@@ -10,12 +10,12 @@ import (
 )
 
 func FindPlummyDaemon(version *semver.Version) *Resource {
-	jarFile := path.Join(jarDir(), "plummy-daemon-" + version.String() + ".jar")
+	jarFile := path.Join(jarDir(), "plummy-daemon-"+version.String()+".jar")
 	if _, err := os.Stat(jarFile); err != nil {
 		return nil
 	}
 	return &Resource{
-		path: jarFile,
+		path:    jarFile,
 		version: version,
 	}
 }
@@ -48,7 +48,8 @@ func EnsurePlummyDaemon(versionStr string) (*Resource, error) {
 func InstallPlummyDaemon(version *semver.Version) (*Resource, error) {
 	url := fmt.Sprintf(
 		"https://github.com/rakutentech/plummy/releases/download/v%v/plummy-daemon-%v.jar",
-		version, version)
+		version, version,
+	)
 	log.Printf("Downloading plummy daemon from %s...\n", url)
 	return installFromURL(url, jarDir(), plummySemVer)
 }

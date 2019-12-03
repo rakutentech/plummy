@@ -6,15 +6,36 @@ on:
       - v[0-9]+.[0-9]+.[0-9]+
 
 jobs:
-  publish:
+  release-daemon:
     runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
         uses: actions/checkout@v1
       -
-        name: Publish daemon JAR
+        name: Release daemon
         env:
-          GITHUB_USERNAME: boazy
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: cd plummy-daemon && ./gradlew publish
+        run: cd plummy-daemon && ./gradlew githubRelease
+  release-cli:
+    needs:
+      - release-daemon
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v1
+      -
+        name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.x
+      -
+        name: Run GoReleaser
+        uses: boazy/goreleaser-action@master
+        with:
+          version: v0.123.3
+          args: release
+          workdir: plummy-cli/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

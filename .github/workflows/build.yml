@@ -1,13 +1,30 @@
 name: build
 
-# This script also does releases for GoReleaser which auto detects the presence
-# of tags.
-
 on:
   pull_request:
+    branches:
+      - '**'
+    tags-ignore:
+      - v*
   push:
+    branches:
+      - '**'
+    tags-ignore:
+      - v*
 
 jobs:
+  build-daemon:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v1
+      -
+        name: Build daemon
+        env:
+          GITHUB_USERNAME: boazy
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cd plummy-daemon && ./gradlew build
   build-cli:
     runs-on: ubuntu-latest
     steps:
@@ -24,19 +41,7 @@ jobs:
         uses: boazy/goreleaser-action@master
         with:
           version: v0.123.3
-          args: release
+          args: release --skip-publish
           workdir: plummy-cli/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  build-daemon:
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v1
-      -
-        name: Build daemon
-        env:
-          GITHUB_USERNAME: boazy
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: cd plummy-daemon && ./gradlew build

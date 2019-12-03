@@ -10,9 +10,9 @@ buildscript {
 }
 
 plugins {
-    id 'pl.allegro.tech.build.axion-release' version '1.10.2'
     id 'application'
-    id 'maven-publish'
+    id 'pl.allegro.tech.build.axion-release' version '1.10.2'
+    id 'com.github.breadmoirai.github-release' version "2.2.9"
 }
 
 apply plugin: 'kotlin'
@@ -64,24 +64,14 @@ compileTestKotlin {
 
 mainClassName = "Main"
 
-tasks.withType(PublishToMavenRepository) {
-    dependsOn(shadowJar)
+githubRelease {
+    token "${System.getenv("GITHUB_TOKEN")}"
+    owner "rakutentech" 
+    repo  "plummy"
+    releaseAssets shadowJar.getArchiveFile().get().getAsFile()
 }
 
-publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/rakutentech/plummy")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
-                password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-    publications {
-        githubPackages(MavenPublication) {
-            from components.java
-        }
-    }
+tasks.withType(com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask) {
+    dependsOn build
 }
+
