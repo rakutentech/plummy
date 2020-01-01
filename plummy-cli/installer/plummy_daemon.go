@@ -39,6 +39,10 @@ func EnsurePlummyDaemon(versionStr string) (*Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("bad pluumy version '%s' format: %w", versionStr, err)
 	}
+	if version.Prerelease() == "dev" {
+		// We cannot find a jar file for development version versions
+		return nil, nil
+	}
 	if d := FindPlummyDaemon(version); d != nil {
 		return d, nil
 	}

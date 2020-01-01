@@ -41,6 +41,9 @@ func Ensure(args *StartupArgs) Daemon {
 	}
 	d := Find()
 	if d == nil || !d.IsAlive() {
+		if jar == nil {
+			log.Fatalf("No JAR file found for version %v. Please use a release version or start the daemon manually.", args.Version)
+		}
 		d = start(jar)
 	} else if shouldRestart(d, jar) {
 		// Restart the daemon if user asked for a different version a different version
@@ -102,10 +105,18 @@ func restart(oldDaemon Daemon, newDaemonJar *installer.Resource) Daemon {
 	return start(newDaemonJar)
 }
 
-func shouldRestart(oldDaemon Daemon, newDaemonJar *installer.Resource) bool {
-	v := oldDaemon.Version()
+func shouldRestart(runningDaemon Daemon, newDaemonJar *installer.Resource) bool {
+	// If no alternative JAR is specified we should not restart the daemon anyway
+	if newDaemonJar == nil {
+		return false
+	}
+
+	// If we can't determine the running daemon version, we should restart
+	v := runningDaemon.Version()
 	if v == nil {
 		return true
 	}
+
+	// If running daemon is not the same version as the new daemon, restart
 	return !v.Equal(newDaemonJar.Version())
 }
