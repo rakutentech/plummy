@@ -39,17 +39,17 @@ class DitaaRenderer : Renderer {
     }
 
     private fun RenderContext.renderFile(inputFile: FileData, options: ConversionOptions): FileData {
-        val grid = prepareGrid(inputFile.contents.data, options.processingOptions)
+        val grid = prepareGrid(inputFile.contents.stream(), options.processingOptions)
         val diagram = Diagram(grid, options)
         return diagram.render(inputFile.name, options.renderingOptions)
     }
 
-    private fun RenderContext.prepareGrid(data: ByteArray, options: ProcessingOptions) = TextGrid().apply {
+    private fun RenderContext.prepareGrid(stream: ByteArrayInputStream, options: ProcessingOptions) = TextGrid().apply {
         // Add markup for custom shape
         options.customShapes?.let { addToMarkupTags(it.keys) }
 
         val lineBuilders = arrayListOf<StringBuilder>()
-        ByteArrayInputStream(data).reader().forEachLine { line ->
+        stream.reader().forEachLine { line ->
             lineBuilders += StringBuilder(line)
         }
         initialiseWithLines(lineBuilders, options)
