@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var versionLineRegex = regexp.MustCompile("^java version \"([^\"])+\"")
+var versionLineRegex = regexp.MustCompile("^(?:java|openjdk) version \"([^\"])+\"")
 var oldStyleVersionRegex = regexp.MustCompile("^1\\.(\\d+)")
 var newStyleVersionRegex = regexp.MustCompile("^\\d+")
 
